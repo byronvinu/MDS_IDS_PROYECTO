@@ -1,0 +1,24 @@
+Estimadores: 50, Learning Rate: 0.01
+Estimadores: 50, Learning Rate: 0.01, C-index: 0.3349
+Estimadores: 50, Learning Rate: 0.05
+Estimadores: 50, Learning Rate: 0.05, C-index: 0.3769
+Estimadores: 50, Learning Rate: 0.1
+Estimadores: 50, Learning Rate: 0.1, C-index: 0.3791
+Estimadores: 100, Learning Rate: 0.01
+Estimadores: 100, Learning Rate: 0.01, C-index: 0.3534
+Estimadores: 100, Learning Rate: 0.05
+Estimadores: 100, Learning Rate: 0.05, C-index: 0.3790
+Estimadores: 100, Learning Rate: 0.1
+Estimadores: 100, Learning Rate: 0.1, C-index: 0.3786
+Estimadores: 150, Learning Rate: 0.01
+Estimadores: 150, Learning Rate: 0.01, C-index: 0.3669
+Estimadores: 150, Learning Rate: 0.05
+Estimadores: 150, Learning Rate: 0.05, C-index: 0.3795
+Estimadores: 150, Learning Rate: 0.1
+Estimadores: 150, Learning Rate: 0.1, C-index: 0.3804
+Estimadores: 200, Learning Rate: 0.01
+Estimadores: 200, Learning Rate: 0.01, C-index: 0.3753
+Estimadores: 200, Learning Rate: 0.05
+Estimadores: 200, Learning Rate: 0.05, C-index: 0.3802
+Estimadores: 200, Learning Rate: 0.1
+Estimadores: 200, Learning Rate: 0.1, C-index: 0.3806

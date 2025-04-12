@@ -1262,21 +1262,20 @@ from lifelines import KaplanMeierFitter
 from lifelines.utils import survival_table_from_events
 import matplotlib.pyplot as plt
 
-# Cargar los datos
-# df_prep = pd.read_csv('ruta_a_tu_archivo.csv')
+
 
 # Establecemos 'CHASIS' como índice
-df = df_prep[['CHASIS', 'TIEMPO_MANT_1000', 'EVENTO_MANT_1000', 'CENSURA', 'AGENCIA', 'LINEA_NEGOCIO', 'FAMILIA_VH']]
+df = df_prep[['CHASIS', 'TIEMPO_MANT_1000', 'EVENTO_MANT_1000', 'CENSURA', 'AGENCIA', 'FAMILIA_VH']]
 df.set_index('CHASIS', inplace=True)
 
 # Convertimos las variables categóricas usando Label Encoding
-categorical_columns = ['AGENCIA', 'LINEA_NEGOCIO', 'FAMILIA_VH']
+categorical_columns = ['AGENCIA', 'FAMILIA_VH']
 for col in categorical_columns:
     le = LabelEncoder()
     df[col] = le.fit_transform(df[col])
 
 # Definimos la variable objetivo y las características
-X = df[['AGENCIA', 'LINEA_NEGOCIO', 'FAMILIA_VH']]  # Características
+X = df[['AGENCIA', 'FAMILIA_VH']]  # Características
 y = df[['TIEMPO_MANT_1000', 'EVENTO_MANT_1000']]  # Tiempo y Evento
 
 # Creamos un conjunto de entrenamiento y uno de prueba
@@ -1295,7 +1294,28 @@ y_pred = xgb_model.predict(X_test)
 roc_auc = roc_auc_score(y_test['EVENTO_MANT_1000'], y_pred)
 print(f"ROC AUC: {roc_auc}")
 
-# Para el análisis de supervivencia, se puede realizar un análisis Kaplan-Meier
+# Metricas de desempeño
+from sklearn.metrics import classification_report, confusion_matrix
+print(classification_report(y_test['EVENTO_MANT_1000'], y_pred))
+print(confusion_matrix(y_test['EVENTO_MANT_1000'], y_pred))
+print("Matriz de confusión:")
+print(confusion_matrix(y_test['EVENTO_MANT_1000'], y_pred))
+print("Reporte de clasificación:")
+print(classification_report(y_test['EVENTO_MANT_1000'], y_pred))
+print("Importancia de las características:")
+print(xgb_model.feature_importances_)
+print("Características más importantes:")
+for i in range(len(xgb_model.feature_importances_)):
+    print(f"{X.columns[i]}: {xgb_model.feature_importances_[i]}")
+
+```
+
+
+```{python}
+#| label: kmf
+#| warning: false
+#| message: false
+
 kmf = KaplanMeierFitter()
 kmf.fit(durations=df['TIEMPO_MANT_1000'], event_observed=df['EVENTO_MANT_1000'])
 
@@ -1306,10 +1326,19 @@ plt.xlabel('Tiempo')
 plt.ylabel('Probabilidad de supervivencia')
 plt.show()
 
+# Curva de supervicencia por familia de vehiculo
+kmf = KaplanMeierFitter()
+for familia in df_prep['FAMILIA_VH'].unique():
+    mask = df_prep['FAMILIA_VH'] == familia
+    kmf.fit(durations=df_prep.loc[mask, 'TIEMPO_MANT_1000'], event_observed=df_prep.loc[mask, 'EVENTO_MANT_1000'], label=familia)
+    kmf.plot_survival_function()
+plt.title('Curva de Supervivencia por Familia de Vehículo')
+plt.xlabel('Tiempo')
+plt.ylabel('Probabilidad de supervivencia')
+plt.legend()
+plt.show()
+
 # Generamos la tabla de supervivencia
-survival_table = survival_table_from_events(df['TIEMPO_MANT_1000'], df['EVENTO_MANT_1000'])
+survival_table = survival_table_from_events(df_prep['TIEMPO_MANT_1000'], df_prep['EVENTO_MANT_1000'])
 print(survival_table.head())
-
-
 ```
-

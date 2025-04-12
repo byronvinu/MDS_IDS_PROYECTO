@@ -1,0 +1,367 @@
+---
+title: "Estimación del tiempo de supervivencia de vehículos hasta su primer mantenimiento"
+date: today
+author: "Byron Vinueza"
+format:
+  revealjs:
+    multiplex: true
+    footer: "[byronvinu.rbind.io/](https://byronvinu.rbind.io/)"
+    theme: ["pp.scss"]
+    slide-number: c/t
+    incremental: true
+    title-slide-attributes:
+      data-background-image: img/cover.png
+      data-background-size: cover
+      data-transition: "slide"
+---
+
+
+## Business Understanding (Entendimiento del negocio/problema)
+
+-   El problema central es la necesidad de estimar el tiempo de supervivencia de los vehículos nuevos vendidos por la concesionaria hasta que requieren su primer mantenimiento en el taller (aproximadamente a los 1000 kilómetros). Esto implica analizar el tiempo transcurrido desde la facturación/entrega del vehículo hasta la fecha de la primera visita al taller.
+
+- (Valor e Impacto) La concesionaria busca optimizar su gestión de mantenimiento y mejorar la satisfacción del cliente al anticipar las necesidades de servicio, mediante campañas de marketing y promociones para el mantenimiento preventivo.
+
+---
+
+## Business Understanding
+
+-  Administrar mejor recursos, reducir costos operativos y aumentar la satisfacción del cliente al ofrecer un servicio más proactivo y personalizado.
+
+-  Se podrá identificar patrones en el comportamiento de los clientes y adaptar sus estrategias de marketing y ventas para maximizar la retención de clientes y aumentar las oportunidades de venta cruzada.
+
+-  La implementación de este modelo de supervivencia permitirá a la concesionaria mejorar su competitividad en el mercado y fortalecer su relación con los clientes, lo que se traduce en un aumento de la lealtad y la recomendación de la marca.
+
+---
+
+## Contexto y Alcance 
+
+-  _Situación Actual:_ 
+   - La concesionaria actualmente no cuenta con un modelo de estimación del tiempo de supervivencia de los vehículos hasta su primer mantenimiento, lo que dificulta la planificación y gestión de recursos en el taller.
+   - La concesionaria enfrenta desafíos en la retención de clientes y en la optimización de sus campañas de marketing y ventas.
+-  _Objetivo del Proyecto:_
+    - Proporcionar un informe que resuma los hallazgos y se tome en cuenta el timepo medio de supervivencia de los vehículos hasta su primer mantenimiento, con la finalidad de definir los umbrales de deseerción y la tasa de retención de clientes.
+
+
+---
+
+## Contexto y Alcance
+
+-  _Alcance del Proyecto:_
+    - El proyecto se centrará en el análisis de datos históricos de ventas y mantenimiento de vehículos, así como en la identificación de patrones y tendencias en el comportamiento de los clientes.
+    - Se utilizarán técnicas de modelado predictivo y análisis estadístico para estimar el tiempo de supervivencia de los vehículos hasta su primer mantenimiento.
+
+---
+
+## Contexto y Alcance 
+
+-  _Limitaciones:_
+    - La calidad y disponibilidad de los datos históricos de ventas y mantenimiento de vehículos pueden afectar la precisión del modelo.
+    - El modelo se basará en datos históricos y no podrá predecir cambios futuros en el comportamiento de los clientes o en el mercado.
+    - El proyecto no incluirá la implementación de campañas de marketing o ventas, sino que se centrará en la creación del modelo y el informe final.
+
+---
+
+##  Entendimiento de los Datos 
+
+- _Fuentes de Datos:_ 
+    - Datos históricos de ventas y mantenimiento de vehículos de la concesionaria.
+    - Todos los datos provienen de una base de datos oracle 11g, la cual se encuentra on-premise, las principales tablas a utilizar son: 
+        - `Tablas de facturación` : FAC_VENTAS_CAB - FAC_VENTAS_VEHICULOS
+        - `Tablas de mantenimiento` : SE_OERDEN_REP - SE_TRABORDEN - SE_VEHICULOS
+
+---
+
+##  Entendimiento de los Datos 
+
+- _Arquitectura de Datos:_
+    - ![](img/arquitectura_data.png){.center}
+
+---
+
+## Descripción y calidad de Datos:
+  - Los datos incluyen información sobre la facturación, como modelo, agencia y la fecha de facturación del vehículo. Por otro lado se cruzaron los datos con las visitas al taller, para poder determinar la fecha de la primera visita al taller.
+  
+  - Se realizó un análisis exploratorio de los datos para identificar patrones y tendencias en el comportamiento de los clientes. 
+  
+
+---
+
+### Muestra de los datos
+
+```{python}
+#| label: import_data
+#| echo: false
+#| eval: true
+
+from ssconnect import connect_singlestore
+import pandas as pd
+
+engine = connect_singlestore()
+sql="SELECT * FROM DWH.VW_VENTA_VS_MANTENIMIENTO "
+df= pd.read_sql(sql, engine)
+
+#Mostrar las primeras filas del dataset para tener una visión general.
+
+df.head()
+
+
+```
+
+---
+
+## Preparación de los Datos
+
+-  Se realizó un proceso de limpieza y transformación de los datos para asegurar su calidad y consistencia. Esto incluyó la eliminación de registros que tenien la fecha de mantenimiento menor a la fecha de facturación, así como la conversión de las fechas a un formato estándar.
+
+- Se estimo el tiempo de supervivencia de los vehículos hasta su primer mantenimiento, calculando la diferencia entre la fecha de facturación y la fecha de la primera visita al taller.
+
+- Se censuraron los datos de aquellos vehículos que habian asistido al taller pasado 120 dias desde la fecha de facturación.
+
+
+---
+
+## Modelado
+
+-  Se aplicarán técnicas de modelado de supervivencia, como el modelo de Cox y el análisis de Kaplan-Meier, para estimar el tiempo de supervivencia de los vehículos hasta su primer mantenimiento.
+
+-  Se evaluará la efectividad del modelo utilizando métricas como la concordancia y el índice de riesgo.
+
+-  Los resultados se presentarán en un informe que incluirá visualizaciones y recomendaciones para la concesionaria.
+
+---
+
+## Resultado de la estimación del tiempo de supervivencia
+
+![](img/model_0.png){.center}
+---
+
+## Resultado de la estimación del tiempo de supervivencia
+
+![](img/model_1.png){.center}
+
+---
+
+## Curvas de supervivencia
+
+
+```{python}
+#| label: setup
+#| echo: false
+#| eval: true
+# lectura de datos 
+from ssconnect import connect_singlestore
+import pandas as pd
+import datetime as dt
+
+
+engine = connect_singlestore()
+sql="SELECT * FROM DWH.VW_VENTA_VS_MANTENIMIENTO WHERE FAMILIA_VH NOT IN ('NO DEFINIDO','YARIS GR')"
+df_prep= pd.read_sql(sql, engine)
+df_prep = df_prep[df_prep['TIPO_DOCUMENTO'] == 'FACTURA CREDITO']
+df_prep = df_prep.sort_values('FECHA', ascending=False)
+df_prep = df_prep.drop_duplicates(subset=['CHASIS'], keep='first')
+df_prep['FECHA'] = pd.to_datetime(df_prep['FECHA'], format='%Y-%m-%d', errors='coerce')
+df_prep = df_prep[df_prep['FECHA'] < dt.datetime(2025, 1, 1)]
+df_prep.reset_index(drop=True, inplace=True)
+
+# Convertir las columnas de fecha a tipo datetime
+df_prep['FECHA_SALIDA'] = pd.to_datetime(df_prep['FECHA_SALIDA'], format='%Y-%m-%d', errors='coerce')
+df_prep['FECHA_MNT_1000'] = pd.to_datetime(df_prep['FECHA_MNT_1000'], format='%Y-%m-%d', errors='coerce')
+df_prep['FECHA_MNT_1000_2'] = pd.to_datetime(df_prep['FECHA_MNT_1000'], format='%Y-%m-%d', errors='coerce')
+# Si FECHA_MNT_1000 es 1970-01-01 , colocar la fecha de hoy
+df_prep['FECHA_MNT_1000_2'] = df_prep['FECHA_MNT_1000_2'].where(df_prep['FECHA_MNT_1000_2'] > dt.datetime(1970, 1, 1), dt.datetime.today())
+# Calcular la diferencia en días entre LA FECHA  y el primer mantenimiento
+df_prep['TIEMPO_MANT_1000'] = (df_prep['FECHA_MNT_1000_2'] - df_prep['FECHA']).dt.days
+# Crear una columna de evento (si hubo mantenimiento o no)
+df_prep['EVENTO_MANT_1000'] = df_prep['MANTENIMIENTO_1000'].apply(lambda x: 1 if x > 0 else 0)
+# quitar los registos con timepo mant negativos
+df_prep = df_prep[df_prep['TIEMPO_MANT_1000'] >= 0]
+# los registros que tienen mas de 120 dias hasta el primer mantenimiento se consideran censurados
+df_prep['EVENTO_MANT_1000'] = df_prep['EVENTO_MANT_1000'].where(df_prep['TIEMPO_MANT_1000'] <= 120, 0)
+
+#crear la columna de censura, si el tiempo hasta el primer mantenimiento es mayor a 120 dias se considera censurado de igual manera los que tienen fecha de mantenimiento 1970-01-01
+df_prep['CENSURA'] = df_prep['TIEMPO_MANT_1000'].apply(lambda x: 1 if x > 120 else 0)
+# los registros que tienen fecha de mantenimiento 1970-01-01 se consideran censurados   
+df_prep['CENSURA'] = df_prep['CENSURA'].where(df_prep['FECHA_MNT_1000'] > dt.datetime(1970, 1, 1), 1)
+# los registros que son iguales o mayores a 120 dias se considera que no tuvieron mantenimiento
+df_prep['TIEMPO_MANT_1000'] = df_prep['TIEMPO_MANT_1000'].where(df_prep['TIEMPO_MANT_1000'] <= 120, 120)
+# seleccionar las columnas necesarias para el analisis 
+df_prep = df_prep[['CHASIS','TIEMPO_MANT_1000', 'EVENTO_MANT_1000','CENSURA', 'AGENCIA', 'LINEA_NEGOCIO', 'FAMILIA_VH']]
+
+```
+
+```{python}
+#| label: km_estimation
+#| echo: false
+#| eval: true
+#| message: false
+
+from sklearn.model_selection import train_test_split
+from lifelines import CoxPHFitter
+from lifelines import  KaplanMeierFitter
+import matplotlib.pyplot as plt
+
+# Asegúrate de que 'EVENTO_MANT_1000' es tu indicador de evento (1=evento, 0=censura)
+# y 'TIEMPO_MANT_1000' es tu tiempo hasta el evento o censura.
+df_prep = df_prep[['TIEMPO_MANT_1000', 'EVENTO_MANT_1000', 'AGENCIA',  'FAMILIA_VH']]
+
+# Codificar variables categóricas como variables dummy
+df_prep_encoded = pd.get_dummies(df_prep, columns=['AGENCIA', 'FAMILIA_VH'], drop_first=True)
+
+# Dividir los datos en entrenamiento y prueba
+train_df, test_df = train_test_split(df_prep_encoded, test_size=0.2, random_state=42, stratify=df_prep_encoded['EVENTO_MANT_1000'])
+
+# Inicializar el modelo de riesgos proporcionales de Cox
+cph = CoxPHFitter()
+
+# Ajustar el modelo con los datos de entrenamiento
+cph.fit(train_df, duration_col='TIEMPO_MANT_1000', event_col='EVENTO_MANT_1000')
+
+# Visualizar la función de supervivencia ajustada, marcar el tiempo medio de mantenimiento , colocar etiqueta de valor
+plt.figure(figsize=(10, 6))
+kmf = KaplanMeierFitter()
+kmf.fit(durations=train_df['TIEMPO_MANT_1000'], event_observed=train_df['EVENTO_MANT_1000'])
+kmf.plot_survival_function()
+plt.title('Función de Supervivencia Ajustada')
+plt.xlabel('Tiempo hasta el primer mantenimiento (días)')
+plt.ylabel('Probabilidad de Supervivencia')
+plt.axvline(x=kmf.median_survival_time_, color='r', linestyle='--', label='Tiempo Medio de Mantenimiento')
+plt.text(kmf.median_survival_time_, 0.5, f'Median: {kmf.median_survival_time_:.1f}', color='r')
+plt.axhline(y=0.5, color='g', linestyle='--', label='Probabilidad 50%')
+plt.text(0, 0.5, 'Probabilidad 50%', color='g')
+plt.axvline(x=120, color='orange', linestyle='--', label='Censura 120 días')
+plt.text(120, 0.5, 'Censura 120 días', color='orange')
+plt.axhline(y=0, color='black', linestyle='--')
+plt.text(0, 0, 'Probabilidad 0%', color='black')
+plt.axhline(y=1, color='black', linestyle='--')
+plt.text(0, 1, 'Probabilidad 100%', color='black')
+plt.axvline(x=0, color='black', linestyle='--')
+plt.legend()
+plt.grid()
+
+```
+
+---
+## Curvas de supervivencia
+
+```{python}
+#| label: km_estimation_2
+#| echo: false
+#| eval: true
+#| message: false
+
+kmf = KaplanMeierFitter()
+plt.figure(figsize=(10, 6))
+for family in df_prep['FAMILIA_VH'].unique():
+    mask = df_prep['FAMILIA_VH'] == family
+    kmf.fit(durations=df_prep.loc[mask, 'TIEMPO_MANT_1000'], event_observed=df_prep.loc[mask, 'EVENTO_MANT_1000'], label=family)
+    kmf.plot_survival_function()
+plt.title('Curva de Supervivencia por Familia')
+plt.xlabel('Tiempo hasta el primer mantenimiento (días)')
+plt.ylabel('Probabilidad de Supervivencia')
+plt.axhline(y=0.5, color='g', linestyle='--', label='Probabilidad 50%')
+plt.text(0, 0.5, 'Probabilidad 50%', color='g')
+plt.axvline(x=120, color='orange', linestyle='--', label='Censura 120 días')
+plt.text(120, 0.5, 'Censura 120 días', color='orange')
+plt.axhline(y=0, color='black', linestyle='--')
+plt.text(0, 0, 'Probabilidad 0%', color='black')
+plt.axhline(y=1, color='black', linestyle='--')
+plt.text(0, 1, 'Probabilidad 100%', color='black')
+plt.axvline(x=0, color='black', linestyle='--')
+plt.legend()
+plt.grid()
+
+```
+
+
+
+---
+
+## Curvas de supervivencia por agencia
+
+```{python}
+#| label: km_estimation_3
+#| echo: false
+#| eval: true
+
+# curvas de supervivencia por agencia
+kmf = KaplanMeierFitter()
+plt.figure(figsize=(10, 6))
+for agency in df_prep['AGENCIA'].unique():
+    mask = df_prep['AGENCIA'] == agency
+    kmf.fit(durations=df_prep.loc[mask, 'TIEMPO_MANT_1000'], event_observed=df_prep.loc[mask, 'EVENTO_MANT_1000'], label=agency)
+    kmf.plot_survival_function()
+plt.title('Curva de Supervivencia por Agencia')
+plt.xlabel('Tiempo hasta el primer mantenimiento (días)')
+plt.ylabel('Probabilidad de Supervivencia')
+plt.axhline(y=0.5, color='g', linestyle='--', label='Probabilidad 50%')
+plt.text(0, 0.5, 'Probabilidad 50%', color='g')
+plt.axvline(x=120, color='orange', linestyle='--', label='Censura 120 días')
+plt.text(120, 0.5, 'Censura 120 días', color='orange')
+plt.axhline(y=0, color='black', linestyle='--')
+plt.text(0, 0, 'Probabilidad 0%', color='black')
+plt.axhline(y=1, color='black', linestyle='--')
+plt.text(0, 1, 'Probabilidad 100%', color='black')
+plt.axvline(x=0, color='black', linestyle='--')
+plt.legend()
+plt.grid()
+
+```
+
+---
+
+## Gráfico de Riesgo Proporcional de Cox
+
+```{python}
+#| label: cox_model
+#| echo: false
+#| eval: true
+#| message: false
+
+plt.figure(figsize=(10, 6))
+cph.plot()
+plt.title('Riesgos Proporcionales de Cox')
+plt.xlabel('Coeficientes')
+plt.ylabel('Variables')
+plt.axvline(x=0, color='black', linestyle='--')
+plt.text(0, 0, 'Coeficiente 0', color='black')  
+plt.axhline(y=0, color='black', linestyle='--')
+plt.text(0, 0, 'Variable 0', color='black')
+plt.grid()
+
+plt.show()
+
+```
+
+---
+
+## Plan de Implementación del modelo en producción
+
+- _Implementación del modelo:_
+    - El modelo se implementará en un entorno de producción ya definido dentro del framework airflow.
+    
+    - Se integrará con el sistema CRM, que se prevee implementar en el canal taller, para enviar notificaciones a los clientes sobre el mantenimiento preventivo y las promociones disponibles. La integración se realizará a través de la escritura de los resultados en una tabla dentro del sistema CRM
+
+    - Se establecerán alertas y notificaciones para el equipo de ventas y marketing, para que puedan realizar un seguimiento de las campañas de marketing y ventas basadas en los resultados del modelo.
+---
+## Monitoreo y Mantenimiento del modelo
+
+- _Monitoreo y Mantenimiento del modelo:_
+    - Se establecerán métricas de rendimiento para evaluar la efectividad del modelo y su impacto en la gestión de mantenimiento y la satisfacción del cliente.
+    - Se realizará un seguimiento continuo del modelo para identificar posibles desviaciones en su rendimiento y realizar ajustes según sea necesario.
+    - Se programarán revisiones periódicas del modelo para asegurarse de que siga siendo relevante y efectivo en el tiempo.
+
+---
+
+## Conclusiones
+-  El modelo de supervivencia desarrollado proporciona una estimación precisa del tiempo de supervivencia de los vehículos hasta su primer mantenimiento, lo que permitirá a la concesionaria optimizar su gestión de mantenimiento y mejorar la satisfacción del cliente.
+-  La implementación del modelo en producción y su integración con el sistema CRM permitirá a la concesionaria anticipar las necesidades de servicio y ofrecer un servicio más proactivo y personalizado a sus clientes.
+-  Se recomienda realizar un seguimiento continuo del modelo y ajustar las estrategias de marketing y ventas en función de los resultados obtenidos.
+
+
+
+
+
+
+
